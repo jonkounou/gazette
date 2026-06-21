@@ -91,9 +91,19 @@ export default function App() {
         let isNew = false;
 
         try {
+          // Wrapped Firestore queries in a timeout race to ensure the app never hangs
+          const fetchWithTimeout = <T,>(promise: Promise<T>, timeoutMs = 2500): Promise<T> => {
+            return Promise.race([
+              promise,
+              new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout de connexion à la base de données Firestore")), timeoutMs)
+              )
+            ]);
+          };
+
           // Fetch settings
           const userDocRef = doc(db, "users", uid);
-          const userDocSnap = await getDoc(userDocRef);
+          const userDocSnap = await fetchWithTimeout(getDoc(userDocRef));
 
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
@@ -109,7 +119,7 @@ export default function App() {
 
           // Fetch posts
           const postsCollRef = collection(db, "users", uid, "posts");
-          const postsSnap = await getDocs(postsCollRef);
+          const postsSnap = await fetchWithTimeout(getDocs(postsCollRef));
           const loadedPosts: Post[] = [];
           postsSnap.forEach((docSnap) => {
             loadedPosts.push({ id: docSnap.id, ...docSnap.data() } as Post);
@@ -118,7 +128,7 @@ export default function App() {
 
           // Fetch curation items
           const curationCollRef = collection(db, "users", uid, "curation");
-          const curationSnap = await getDocs(curationCollRef);
+          const curationSnap = await fetchWithTimeout(getDocs(curationCollRef));
           const loadedCuration: CurationItem[] = [];
           curationSnap.forEach((docSnap) => {
             loadedCuration.push({ id: docSnap.id, ...docSnap.data() } as CurationItem);
@@ -145,14 +155,34 @@ export default function App() {
             setShowSetup(false);
           }
         } catch (err) {
-          console.error("Erreur d'initialisation Firebase Firestore:", err);
+          console.warn("Utilisation du mode secours hors-ligne (Firestore inaccessible ou hors délai) :", err);
+          // Graceful fallback to initial values to avoid blocking user
+          setBrandName(loadedBrandName);
+          setBrandTheme(loadedTheme || "Sujets d'innovation");
+          setBrandThemeTags(loadedThemeTags);
+          setChannels(loadedChannels);
+          
           setUser({
             email: firebaseUser.email || "",
             name: loadedBrandName,
             role: "Rédacteur en chef",
+            avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
+            isNewUser: isNew
           });
+          setShowSetup(!loadedTheme);
         }
       } else {
+        const localUserString = sessionStorage.getItem("gazette_local_user");
+        if (localUserString) {
+          try {
+            const localUser = JSON.parse(localUserString);
+            setUser(localUser);
+            setSystemLoading(false);
+            return;
+          } catch (e) {
+            // failed parsing
+          }
+        }
         setUser(null);
         setPosts([]);
         setCurationItems([]);
@@ -185,12 +215,21 @@ export default function App() {
 
   // Auth routing actions
   const handleLogin = (newUser: User) => {
-    // onAuthStateChanged will handle settings state loading automatically!
+    if (newUser.email === "demo@gazette.ai" && !auth.currentUser) {
+      sessionStorage.setItem("gazette_local_user", JSON.stringify(newUser));
+      setBrandName(newUser.name);
+      setPosts(INITIAL_POSTS);
+      setCurationItems(INITIAL_CURATION);
+      setBrandTheme("Sujets d'innovation");
+      setBrandThemeTags(["veille", "ia", "tech", "innovation", "formation"]);
+      setShowSetup(false);
+    }
     setUser(newUser);
   };
 
   const handleLogout = async () => {
     setSystemLoading(true);
+    sessionStorage.removeItem("gazette_local_user");
     await auth.signOut();
   };
 
