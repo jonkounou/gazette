@@ -1,0 +1,6 @@
+{
+  "name": "Gazette",
+  "description": "Un outil éditorial et planificateur complet pour suivre, planifier et optimiser vos publications sur tous vos réseaux.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

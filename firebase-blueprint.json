@@ -1,0 +1,71 @@
+{
+  "collections": [
+    {
+      "name": "users",
+      "description": "User profile, brand configurations, and channels settings",
+      "fields": [
+        {
+          "name": "email",
+          "type": "string",
+          "description": "The user's registered email address"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "The human-friendly publisher or user name"
+        },
+        {
+          "name": "brandTheme",
+          "type": "string",
+          "description": "Selected editorial brand theme description"
+        },
+        {
+          "name": "brandThemeTags",
+          "type": "array",
+          "description": "Array of tags associated with the theme"
+        },
+        {
+          "name": "channels",
+          "type": "array",
+          "description": "Configured channel configurations"
+        },
+        {
+          "name": "role",
+          "type": "string",
+          "description": "User role standard setting"
+        }
+      ]
+    },
+    {
+      "name": "users/{userId}/posts",
+      "description": "The user's custom created or scheduled editorial posts",
+      "fields": [
+        { "name": "title", "type": "string" },
+        { "name": "content", "type": "string" },
+        { "name": "channel", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "pillar", "type": "string" },
+        { "name": "campaign", "type": "string" },
+        { "name": "date", "type": "string" },
+        { "name": "time", "type": "string" },
+        { "name": "format", "type": "string" },
+        { "name": "phase", "type": "string" },
+        { "name": "tags", "type": "array" },
+        { "name": "visuals", "type": "array" }
+      ]
+    },
+    {
+      "name": "users/{userId}/curation",
+      "description": "Monitored warm stories and content curation items",
+      "fields": [
+        { "name": "title", "type": "string" },
+        { "name": "summary", "type": "string" },
+        { "name": "source", "type": "string" },
+        { "name": "importance", "type": "number" },
+        { "name": "tweetsCount", "type": "number" },
+        { "name": "category", "type": "string" },
+        { "name": "daysAgo", "type": "string" }
+      ]
+    }
+  ]
+}
